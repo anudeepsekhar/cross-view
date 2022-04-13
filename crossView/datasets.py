@@ -5,10 +5,12 @@ import os
 import random
 
 import PIL.Image as pil
+from matplotlib import image
 import matplotlib.pyplot as PLT
 import cv2
 
 import numpy as np
+import pandas as pd
 
 import torch
 import torch.utils.data as data
@@ -21,7 +23,6 @@ def pil_loader(path):
     with open(path, 'rb') as f:
         with pil.open(f) as img:
             return img.convert('RGB')
-
 
 def process_topview(topview, size):
     topview = topview.convert("1")
@@ -370,3 +371,32 @@ class Argoverse(MonoDataset):
 
         self.preprocess(inputs, color_aug)
         return inputs
+
+class CMUDataMono(data.Dataset):
+    def __init__(self, data_root, data, cam_name, gt_mask, opt) -> None:
+        super(CMUDataMono self).__init__()
+        self.data_root = data_root
+        self.data = data
+        self.opt = opt
+        self.cam_name = cam_name
+        self.gt_mask = cv2.imread(gt_mask, 0)
+        self.to_tensor = transforms.ToTensor()
+        self.loader = pil_loader
+        self.height = self.opt.height
+        self.width = self.opt.width
+
+    def __getitem__(self, index):
+        image_data_path = self.data['cam_'+self.cam_name]
+        image_path = os.path.join(self.opt.image_dir, image_data_path)
+        image = self.loader(image_path)
+
+        gt_data_path = self.data['labels']
+        gt_path = os.path.join(self.opt.label_dir, gt_data_path)
+        gt_image = cv2.imread(gt_path, 0)
+
+        return image, gt_image
+    
+    def __len__(self):
+        return len(self.data)
+
+        
